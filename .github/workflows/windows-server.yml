@@ -1,0 +1,40 @@
+name: Windows
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  windows-server:
+    runs-on: windows-latest  # 关键：用 Windows 云服务器
+    timeout-minutes: 350
+
+    steps:
+      - name: 下载 cloudflared
+        run: |
+          curl -L "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -o cloudflared.exe
+        shell: pwsh
+
+      - name: 设置 Windows 登录密码(用于RDP远程)
+        run: |
+          net user runneradmin P@ssw0rd123 /active:yes
+          net localgroup Administrators runneradmin /add
+        shell: pwsh
+
+      - name: 启动 Cloudflare 隧道
+        run: |
+          .\cloudflared.exe tunnel run --token ${{ secrets.CF_TUNNEL_TOKEN }}
+        shell: pwsh
+
+      - name: 自动续命重启
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'windows-server.yml',
+              ref: context.ref
+            })
