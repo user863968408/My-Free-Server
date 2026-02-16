@@ -18,8 +18,8 @@ jobs:
 
       - name: 设置 Windows 登录密码(用于RDP远程)
         run: |
-          net user genshin admin /active:yes
-          net localgroup Administrators genshin /add
+          net user runner admin123 /active:yes
+          net localgroup Administrators runner /add
         shell: pwsh
 
       - name: 启动 Cloudflare 隧道
